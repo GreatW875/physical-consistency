@@ -1,0 +1,5 @@
+﻿check,n_steps,max_abs_difference,mismatch_count_gt_1e-4
+old_B_recomputed_vs_source_walk,5650,0.0,0
+old_O_recomputed_vs_source_walk,5650,0.0,0
+old_L_recomputed_vs_source_walk,5650,0.0,0
+front_min_recomputed_vs_source_walk,5650,0.0,0

@@ -1,0 +1,107 @@
+{
+  "source": "navigation_experiments.xlsx",
+  "random_seed": 20260822,
+  "calibration_rounds_per_scene": 35,
+  "validation_rounds_per_scene": 15,
+  "trap_steps": [
+    25,
+    50,
+    75
+  ],
+  "bootstrap_replicates": 500,
+  "source_indicators": [
+    "P",
+    "B",
+    "O",
+    "L"
+  ],
+  "risk_indicators": [
+    "F",
+    "B",
+    "L"
+  ],
+  "B_definition": {
+    "center_deg": 0,
+    "angles_deg": [
+      -45,
+      -40,
+      -35,
+      -30,
+      -25,
+      -20,
+      -15,
+      -10,
+      -5,
+      0,
+      5,
+      10,
+      15,
+      20,
+      25,
+      30,
+      35,
+      40,
+      45
+    ],
+    "blocked_if_distance_lt_m": 1.2,
+    "applies_to": [
+      "walk",
+      "turn"
+    ]
+  },
+  "L_definition": {
+    "center_deg": 0,
+    "angles_deg": [
+      -90,
+      -85,
+      -80,
+      -75,
+      -70,
+      -65,
+      -60,
+      -55,
+      -50,
+      50,
+      55,
+      60,
+      65,
+      70,
+      75,
+      80,
+      85,
+      90
+    ],
+    "risk_if_lateral_clearance_lt_m": 0.4,
+    "lateral_clearance_formula": "distance * sin(abs(angle))",
+    "applies_to": [
+      "walk",
+      "turn"
+    ]
+  },
+  "O_definition": {
+    "candidate_action_fields": [
+      "proposed_move",
+      "proposed_dist",
+      "proposed_ang"
+    ],
+    "front_min_angles_deg": [
+      -5,
+      0,
+      5
+    ],
+    "safety_margin_m": 0.4,
+    "formula": "clip((proposed_dist - (min_front_dist - safety_margin)) / safety_margin, 0, 1)",
+    "walk_only": true,
+    "turn_value": 0.0
+  },
+  "F_definition": {
+    "formula": "max(P, O)",
+    "turn_reduction": "O=0, therefore F=P",
+    "purpose": "retain the worse front risk without double-weighting P and O"
+  },
+  "entropy_normalization": "none; indicators already in [0,1] and positively oriented",
+  "primary_entropy_population": "all Baseline calibration steps; walk and turn pooled",
+  "risk_formula": "risk_entropy = w_F*F + w_B*B + w_L*L for both walk and turn",
+  "weight_version": "entropy_cal35_seed20260822_fmax_po_unified_fbl",
+  "threshold_version": "pending_quantile_validation"
+}

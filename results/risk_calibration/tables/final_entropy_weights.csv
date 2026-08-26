@@ -1,0 +1,4 @@
+﻿population,indicator,weight,derivation,applies_to
+all,F,0.39918914477108985,entropy_weight_all_baseline_calibration_steps,walk_and_turn
+all,B,0.2190297888228466,entropy_weight_all_baseline_calibration_steps,walk_and_turn
+all,L,0.3817810664060635,entropy_weight_all_baseline_calibration_steps,walk_and_turn
