@@ -2,18 +2,27 @@ import base64
 import json
 import os
 import time
+from pathlib import Path
+from typing import Mapping, Optional, Union
 
 from openai import OpenAI
 from physical_consistency import PhysicalConsistencyConfig
 from physical_consistency.nav_parser import format_target_display
 
-ALIYUN_API_KEY  = "YOUR_ALIYUN_API_KEY"  # 替换为你的阿里云 API Key
 ALIYUN_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-IMG_PATH = os.path.expanduser(
-    "~/Unity-RL-Playground-main/gewu/Assets/Manipulation/robot_view.jpg"
-)
+DEFAULT_IMAGE_PATH = Path(__file__).resolve().parent / "robot_view.jpg"
+IMG_PATH = DEFAULT_IMAGE_PATH
 
-_client = OpenAI(base_url=ALIYUN_BASE_URL, api_key=ALIYUN_API_KEY)
+
+def get_api_key(env: Mapping[str, str] = os.environ) -> str:
+    key = env.get("DASHSCOPE_API_KEY", "").strip()
+    if not key:
+        raise RuntimeError("未设置 DASHSCOPE_API_KEY 环境变量")
+    return key
+
+
+def get_client(api_key: Optional[str] = None) -> OpenAI:
+    return OpenAI(base_url=ALIYUN_BASE_URL, api_key=api_key or get_api_key())
 
 MAX_WALK_DIST = PhysicalConsistencyConfig.MAX_WALK_DIST
 MAX_TURN_ANG  = PhysicalConsistencyConfig.MAX_TURN_ANG
@@ -32,7 +41,7 @@ SYSTEM_PROMPT = f"""
     """
 
 
-def _read_image_b64(path: str) -> str:
+def _read_image_b64(path: Union[str, Path]) -> str:
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode("utf-8")
 
@@ -51,8 +60,9 @@ def format_action_cmd(action: dict) -> str:
 #  对话控制器
 # ═══════════════════════════════════════════════════════════════════
 class AutonomousController:
-    def __init__(self):
-        self.image_path = IMG_PATH
+    def __init__(self, client=None, image_path=None):
+        self.client = client
+        self.image_path = Path(image_path) if image_path is not None else DEFAULT_IMAGE_PATH
         self.reset_memory()
 
     def reset_memory(self):
@@ -62,10 +72,12 @@ class AutonomousController:
         ]
 
     def _call_vlm(self, messages: list) -> str:
+        if self.client is None:
+            self.client = get_client()
         attempt = 0
         while True:
             try:
-                response = _client.chat.completions.create(
+                response = self.client.chat.completions.create(
                     model="qwen-vl-max",
                     messages=messages,
                     response_format={"type": "json_object"}

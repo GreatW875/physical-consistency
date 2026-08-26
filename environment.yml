@@ -1,0 +1,14 @@
+name: physical-consistency
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8.20
+  - pip=24.2
+  - numpy=1.24.4
+  - pandas=2.0.3
+  - pillow=10.4.0
+  - pip:
+      - dashscope==1.25.9
+      - openai==2.2.0
+      - pytest==8.3.5
