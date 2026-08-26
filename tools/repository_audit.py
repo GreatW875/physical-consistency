@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 import sys
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, List
 
 
 FORBIDDEN_DIRECTORIES = {
@@ -54,10 +54,10 @@ def _files(root: Path) -> Iterable[Path]:
             yield path
 
 
-def audit_repository(root: Path) -> list[str]:
+def audit_repository(root: Path) -> List[str]:
     """Return human-readable problems found below *root*."""
     root = root.resolve()
-    issues: list[str] = []
+    issues: List[str] = []
 
     for path in root.rglob("*"):
         relative = path.relative_to(root)
