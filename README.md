@@ -19,10 +19,10 @@
 - Git 与 Git LFS。
 - Conda 或 Miniconda。
 - Python 3.8（`environment.yml` 固定为 3.8.20）。
-- Unity `2022.3.62t6`，或源工程记录的团结引擎 `1.8.4`。
+- 优先使用源工程记录的团结引擎 `1.8.4`。
 - VLM 模式需要可访问阿里云 DashScope 兼容接口及有效 API Key。
 
-`ProjectVersion.txt` 是编辑器版本的权威记录。不要提交 Unity 自动生成的 `Library/`、`Temp/`、`Logs/` 或 `UserSettings/`。
+`ProjectVersion.txt` 同时保留了 Unity `2022.3.62t6` 与团结引擎 `1.8.4` 的源工程记录，但本地 ML-Agents `3.0.0` 的包元数据声明 Unity `2023.2`。当前尚未验证一个纯 Unity 编辑器组合能够同时满足这些约束；若不使用团结引擎，应在副本中评估升级和包兼容性，不要直接覆盖工程。不要提交编辑器自动生成的 `Library/`、`Temp/`、`Logs/` 或 `UserSettings/`。
 
 ## 克隆与 Git LFS
 
@@ -44,7 +44,7 @@ conda activate physical-consistency
 VLM 模式在当前 PowerShell 会话中设置 Key：
 
 ```powershell
-$env:DASHSCOPE_API_KEY = "你的 DashScope API Key"
+Set-Item -Path Env:DASHSCOPE_API_KEY -Value "你的 DashScope API Key"
 ```
 
 Key 只应保存在环境变量或本机密钥管理工具中，不要写入源码、README 或 `.env` 并提交。
@@ -86,6 +86,7 @@ python tools/check_environment.py --manual
 python -m unittest discover -s tests -v
 python -m unittest analysis.risk_calibration.test_analyze -v
 python tools/repository_audit.py
+python tools/assemble_unity_project.py --audit-only --target . --manifest dependency-manifest.json
 ```
 
 测试使用伪客户端验证 VLM 边界，不会发起真实 API 请求。
@@ -108,6 +109,8 @@ python analysis/risk_calibration/analyze.py
 ## 已知验证边界
 
 当前整理环境没有发现可调用的 Unity/Tuanjie 编辑器，因此尚未执行批处理 AssetDatabase 导入和 Play Mode 实机验证。静态依赖检查发现 16 个 GUID 在原始工程中已经缺少源资源，其中包括旧烘焙光照、NavMesh 数据及部分第三方素材残留引用；完整列表在 `dependency-manifest.json` 的 `missing_source_guids` 中。首次编辑器导入时应以 Console 和导出的依赖清单复核这些遗留项，不能把“Python 测试通过”等同于“Unity 场景已完成实机验证”。
+
+Python 与 Unity 之间沿用了源实验代码的无长度前缀 TCP 文本协议；当前烟雾测试只覆盖顺序收发，未覆盖高频消息下的 TCP 拆包或粘包。正式长时间实验前应先完成 Play Mode 联调；若出现偶发协议解析异常，再统一为两端增加换行或长度前缀消息边界。
 
 ## 常见问题
 

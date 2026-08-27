@@ -822,6 +822,24 @@
     "fae53a797b5479c43b9a3aeac7e35e5c",
     "fba5fd74d37a6cf4284698624eb8f6aa"
   ],
+  "restored_package_guids": {
+    "1e3fdca004f2d45fe8abbed571a8abd5": {
+      "name": "com.unity.ai.navigation",
+      "version": "1.1.7"
+    },
+    "683b6cb6d0a474744822c888b46772c9": {
+      "name": "com.unity.sentis",
+      "version": "2.1.0"
+    },
+    "7a5ac11cc976e418e8d13136b07e1f52": {
+      "name": "com.unity.ai.navigation",
+      "version": "1.1.7"
+    },
+    "d0353a89b1f911e48b9e16bdc9f2e058": {
+      "name": "com.unity.render-pipelines.universal",
+      "version": "14.1.0"
+    }
+  },
   "missing_source_guids": [
     "02ecd6544b6e99849973a3bd71ff332d",
     "2495bdecb5f56e64aa343429ea1299ee",
