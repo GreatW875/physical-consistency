@@ -26,7 +26,8 @@ if "openai" not in sys.modules:
 from physical_consistency.checker import CheckResult, PhysicalConsistencyChecker
 from physical_consistency.config import PhysicalConsistencyConfig
 from physical_consistency.metrics_logger import MetricsLogger
-from physical_consistency.risk_model import compute_collision_risk
+from physical_consistency.risk_model import compute_collision_risk, compute_safe_distance
+from main import EXP_SUBJECTS
 from trap_injector import TrapInjector
 from vlm_agent import AutonomousController
 
@@ -65,6 +66,11 @@ class RiskModelV2Tests(unittest.TestCase):
         )
         self.assertEqual(result["overshoot"], 0.775)
         self.assertEqual(result["front"], 0.775)
+
+    def test_safe_distance_is_zero_when_front_clearance_is_below_margin(self):
+        nav = clear_nav(0.3)
+        action = {"move": "walk", "dist": 1.0, "ang": 0.0}
+        self.assertEqual(compute_safe_distance(nav, action, self.cfg), 0.0)
 
     def test_turn_keeps_b_and_l_centered_on_current_heading(self):
         """捕获回退：turn再次以候选转角为B/L扇区中心。"""
@@ -127,6 +133,20 @@ class CheckerThresholdTests(unittest.TestCase):
                     action, self.nav, 0.51, self.components
                 )
                 self.assertEqual(result.reason, "high_risk_veto")
+
+    def test_high_risk_only_group_keeps_medium_action_and_vetoes_high_risk(self):
+        self.cfg.MEDIUM_RISK_REDUCTION_ENABLED = False
+        action = {"move": "walk", "dist": 1.0, "ang": 0.0}
+        medium = self.checker._decide(action, self.nav, 0.3, self.components)
+        high = self.checker._decide(action, self.nav, 0.51, self.components)
+        self.assertTrue(medium.approved)
+        self.assertEqual(medium.modified_action, action)
+        self.assertEqual(high.reason, "high_risk_veto")
+
+    def test_experiment_schedules_high_risk_only_group_c(self):
+        group_c = next(subject for subject in EXP_SUBJECTS if subject["name"] == "C")
+        self.assertTrue(group_c["checker_enabled"])
+        self.assertFalse(group_c["medium_risk_reduction_enabled"])
 
 
 class PromptIsolationTests(unittest.TestCase):
@@ -216,6 +236,45 @@ class ThreeLevelLoggerTests(unittest.TestCase):
             self.assertEqual(row["front_risk"], "0.8")
             self.assertEqual(row["collision_count"], "2")
             self.assertEqual(row["stuck"], "1")
+
+    def test_round_and_experiment_mean_risk_use_executed_action_risk(self):
+        """汇总风险应使用校验后的final_risk_score，而非候选动作风险。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = PhysicalConsistencyConfig()
+            cfg.LOG_DIR = tmp
+            logger = MetricsLogger(cfg)
+            logger.start_round("corridor", "test", "A", 1, True)
+            result = CheckResult(
+                risk_score=0.6,
+                approved=False,
+                modified_action={"move": "walk", "dist": 0.4, "ang": 0.0},
+                reason="distance_reduced",
+                risk_components={
+                    "front": 0.8,
+                    "proximity": 0.5,
+                    "coverage": 0.2,
+                    "overshoot": 0.8,
+                    "lateral": 0.1,
+                    "min_frontal_dist": 1.0,
+                },
+                modified_risk_info={"risk_score": 0.2},
+            )
+
+            with redirect_stdout(io.StringIO()):
+                logger.log_step(
+                    {"move": "walk", "dist": 1.0, "ang": 0.0},
+                    result,
+                    clear_nav(),
+                )
+                logger.commit_step(collision_count=0)
+                stats = logger.finalize_round(3.0)
+                logger.finalize_experiment()
+
+            self.assertEqual(stats["mean_risk"], 0.2)
+            self.assertEqual(stats["max_risk"], 0.6)
+            with open(Path(tmp) / "experiment_summary.csv", encoding="utf-8") as handle:
+                summary = next(csv.DictReader(handle))
+            self.assertEqual(summary["avg_risk"], "0.2")
 
     def test_step_log_derives_binary_collision_label_before_collision_count(self):
         """捕获回退：动作碰撞标签缺失、非二元或未紧邻碰撞次数左侧。"""
@@ -308,5 +367,3 @@ class TrapInjectorTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-

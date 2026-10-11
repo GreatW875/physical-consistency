@@ -22,16 +22,16 @@ def _sigmoid(x: float, center: float = 0.0, steepness: float = 5.0) -> float:
     return 1.0 / (1.0 + math.exp(z))
 
 
-def _proximity_risk(min_front_dist: float, safe_dist) -> float:
+def _proximity_risk(min_front_dist: float, center_dist: float) -> float:
     """前方最近障碍物的逼近程度。
 
-    以 DANGER_DISTANCE (1.0m) 为 sigmoid 中心：
+    行走使用1.0m，转向使用前向距离基准作为 sigmoid 中心；以下为行走示例：
     - 0.2m → ~0.98
     - 0.5m → ~0.92
     - 1.0m → 0.50
     - 2.0m → ~0.01
     """
-    return _sigmoid(min_front_dist, safe_dist, steepness=5.0)
+    return _sigmoid(min_front_dist, center_dist, steepness=5.0)
 
 
 def _coverage_risk(nav: dict, cfg: PhysicalConsistencyConfig) -> float:
@@ -57,7 +57,7 @@ def _overshoot_risk(walk_dist: float, min_front_dist: float,
 
 
 def _lateral_risk(nav: dict, cfg: PhysicalConsistencyConfig) -> float:
-    """当前朝向±50°～±90°内，横向净空小于0.4 m的射线比例L。"""
+    """当前朝向±50°～±90°内，横向净空低于侧向阈值的射线比例L。"""
     risk_count = 0
     check_count = 0
     for ang, dist in nav.items():
@@ -65,7 +65,7 @@ def _lateral_risk(nav: dict, cfg: PhysicalConsistencyConfig) -> float:
         if cfg.LATERAL_MIN_ANGLE <= rel_ang <= cfg.LATERAL_MAX_ANGLE:
             check_count += 1
             lateral_clearance = dist * math.sin(math.radians(rel_ang))
-            if lateral_clearance < cfg.ROBOT_HALF_WIDTH:
+            if lateral_clearance < cfg.LATERAL_CLEARANCE_THRESHOLD:
                 risk_count += 1
     if check_count == 0:
         return 0.0
@@ -105,7 +105,7 @@ def compute_collision_risk(
         p = _proximity_risk(min_front, cfg.DANGER_DISTANCE)
         c = _coverage_risk(nav, cfg)
         o = _overshoot_risk(
-            walk_dist, min_front, cfg.OVERSHOOT_SAFETY_MARGIN
+            walk_dist, min_front, cfg.FRONT_DISTANCE_REFERENCE
         )
         l = _lateral_risk(nav, cfg)
         f = _front_risk(p, o)
@@ -130,7 +130,7 @@ def compute_collision_risk(
         # P表示候选转向后方向的逼近风险；B/L仍以当前朝向0°为中心。
         target_min = get_sector_min(nav, center=turn_ang,
                                     half_width=cfg.FRONTAL_CONE_HALF_ANGLE)
-        p = _proximity_risk(target_min, cfg.CRITICAL_DISTANCE)
+        p = _proximity_risk(target_min, cfg.FRONT_DISTANCE_REFERENCE)
         c = _coverage_risk(nav, cfg)
         o = 0.0  # 转向无位移
         l = _lateral_risk(nav, cfg)
@@ -184,13 +184,13 @@ def compute_safe_distance(
 ) -> float:
     """缩减行走距离以保留安全余量。
 
-    safe_dist = min(原始距离, 前方最小距离 - CRITICAL_DISTANCE)
-    至少保留 0.1m 以避免完全不动。
+    safe_dist = min(原始距离, max(0.0m, 前方最小距离 - FRONT_DISTANCE_REFERENCE))
+    净空不足时执行步长为0。
     """
     if cfg is None:
         cfg = PhysicalConsistencyConfig()
 
     min_front = get_sector_min(nav, center=0, half_width=cfg.FRONTAL_CONE_HALF_ANGLE)
     original_dist = float(action.get("dist", 0))
-    safe = max(0.1, min_front - cfg.CRITICAL_DISTANCE)
+    safe = max(0.0, min_front - cfg.FRONT_DISTANCE_REFERENCE)
     return min(safe, original_dist)

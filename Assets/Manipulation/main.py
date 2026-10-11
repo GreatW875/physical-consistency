@@ -13,18 +13,19 @@ WALK_TIMEOUT = 8.0  # 秒
 #  实验配置
 # ═══════════════════════════════════════════════════════════════════
 EXP_MAX_DECISIONS    = 100   # 每轮实验的最大决策次数
-EXP_ROUNDS_PER_SCENE = 42    # 每个实验对象在每个场景的实验轮数
+EXP_ROUNDS_PER_SCENE = 50    # 每个实验对象在每个场景的实验轮数
 
 # 场景列表（名称 + 任务描述），通过索引切换
 EXP_SCENES = [
-    # {"name": "corridor",  "task": "直线走廊避障"},
+    {"name": "corridor",  "task": "直线走廊避障"},
     {"name": "classroom", "task": "教室内避障"},
 ]
 
 # 实验对象
 EXP_SUBJECTS = [
-    # {"name": "A", "checker_enabled": True},    # VLM ＋ 校验
-    {"name": "B", "checker_enabled": False},   # 仅 VLM
+    {"name": "A", "checker_enabled": True, "medium_risk_reduction_enabled": True},   # 完整校验
+    {"name": "B", "checker_enabled": False, "medium_risk_reduction_enabled": False}, # 仅 VLM
+    {"name": "C", "checker_enabled": True, "medium_risk_reduction_enabled": False}, # 仅高风险干预
 ]
 
 manual = False  # 是否启用人工输入指令（替代 VLM 输出），用于调试
@@ -83,8 +84,10 @@ def run_main():
             for subject in EXP_SUBJECTS:
                 subj_name   = subject["name"]
                 cfg.CHECKER_ENABLED = subject["checker_enabled"]
+                cfg.MEDIUM_RISK_REDUCTION_ENABLED = subject["medium_risk_reduction_enabled"]
 
-                mode_desc = "VLM＋校验" if cfg.CHECKER_ENABLED else "VLM"
+                mode_desc = ("VLM＋完整校验" if cfg.MEDIUM_RISK_REDUCTION_ENABLED
+                             else "VLM＋高风险干预" if cfg.CHECKER_ENABLED else "VLM")
                 print(f"\n{'='*60}")
                 print(f"[实验对象] {subj_name} ({mode_desc})")
                 print(f"{'='*60}")

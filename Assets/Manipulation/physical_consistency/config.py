@@ -6,6 +6,7 @@ class PhysicalConsistencyConfig:
 
     # ── A/B 开关 ──────────────────────────────────────────────────
     CHECKER_ENABLED: bool = True      # False = 仍计算风险但不修改动作
+    MEDIUM_RISK_REDUCTION_ENABLED: bool = True  # C组关闭中风险缩距，保留高风险干预
 
     # ── 局部观测角域 ──────────────────────────────────────────────
     FRONT_MIN_HALF_ANGLE: float = 5.0       # P/O的前方最小距离：±5°
@@ -15,13 +16,12 @@ class PhysicalConsistencyConfig:
     FRONTAL_CONE_HALF_ANGLE: float = 30.0   # turn后方向P、逃逸与缩距查询角域
 
     # ── 距离阈值 ──────────────────────────────────────────────────
-    CRITICAL_DISTANCE: float = 0.4    # 米，紧急阈值
+    FRONT_DISTANCE_REFERENCE: float = 0.4  # 米，转向P中心、O余量及缩距共同使用
     DANGER_DISTANCE: float = 1.0      # 米，高风险阈值
     CAUTION_DISTANCE: float = 1.2     # 米，中风险阈值
 
-    # ── 机器人几何 ────────────────────────────────────────────────
-    ROBOT_HALF_WIDTH: float = 0.4     # 米，用于侧向碰撞检测
-    OVERSHOOT_SAFETY_MARGIN: float = 0.4  # 米，O的前方安全余量
+    # ── 侧向净空（非机器人实体半宽）──────────────────────────────
+    LATERAL_CLEARANCE_THRESHOLD: float = 0.4  # 米，L的侧向净空判据
 
     # ── 动作上限 ──────────────────────────────────────────────────
     MAX_WALK_DIST: float = 2.0        # 米

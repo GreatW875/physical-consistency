@@ -224,7 +224,8 @@ class MetricsLogger:
         steps = self._step_buf
         total = len(steps)
 
-        risks = [s["risk_score"] for s in steps]
+        proposed_risks = [s["risk_score"] for s in steps]
+        executed_risks = [s["final_risk_score"] for s in steps]
         modified_count = sum(1 for s in steps if s["was_modified"])
         walk_count = sum(1 for s in steps if s["final_move"] == "walk")
         turn_count = sum(1 for s in steps if s["final_move"] == "turn")
@@ -245,8 +246,8 @@ class MetricsLogger:
             "collisions":      collision_count,
             "stucks":          stuck_count,
             "corrections":     correction_count,
-            "mean_risk":       round(sum(risks) / total, 4) if total else 0.0,
-            "max_risk":        round(max(risks), 4) if risks else 0.0,
+            "mean_risk":       round(sum(executed_risks) / total, 4) if total else 0.0,
+            "max_risk":        round(max(proposed_risks), 4) if proposed_risks else 0.0,
             "actions_modified_rate": round(modified_count / total, 4) if total else 0.0,
             "walk_count":      walk_count,
             "turn_count":      turn_count,

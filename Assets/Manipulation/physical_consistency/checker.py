@@ -106,7 +106,8 @@ class PhysicalConsistencyChecker:
                                      "dist": self.cfg.HIGH_RISK_FOLLOW_DIST,
                                      "ang": 0.0},
                     modified_risk_info=mod_risk)
-            if risk_score >= self.cfg.MED_RISK_THRESHOLD:
+            if (self.cfg.MEDIUM_RISK_REDUCTION_ENABLED
+                    and risk_score >= self.cfg.MED_RISK_THRESHOLD):
                 safe_dist  = compute_safe_distance(nav, proposed, self.cfg)
                 mod_action = {"move": "walk", "dist": safe_dist,
                               "ang": proposed.get("ang", 0.0)}

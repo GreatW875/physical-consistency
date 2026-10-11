@@ -73,7 +73,7 @@ public class RobotSocketReceiver : MonoBehaviour
     // ─────────────────────────── 实验：场景初始位置 ───────────────────
     // 与 Python 端 EXP_SCENES 列表一一对应，索引相同
     private Vector3[] sceneStartPositions = {
-        // new Vector3(0f, 0.78f, 0f),       // scene 0: corridor
+        new Vector3(0f, 0.78f, 0f),       // scene 0: corridor
         new Vector3(6f, 0.78f, 0f),      // scene 1: classroom
         // new Vector3(30f, 0.78f, 0f),      // scene 2: park
         // new Vector3(52f, 1f, 0f),         // scene 3: house
@@ -82,9 +82,9 @@ public class RobotSocketReceiver : MonoBehaviour
     private float[] sceneStartYaws = {
         0f,    // scene 0
         0f,    // scene 1
-        0f,    // scene 2
-        0f,    // scene 3
-        0f,    // scene 4
+        // 0f,    // scene 2
+        // 0f,    // scene 3
+        // 0f,    // scene 4
     };
     private int currentSceneIdx = 0;
 
